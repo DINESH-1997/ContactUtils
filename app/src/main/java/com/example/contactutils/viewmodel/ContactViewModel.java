@@ -16,10 +16,10 @@ public class ContactViewModel extends ViewModel {
 
     private MutableLiveData<List<ContactModel>> mContacts;
     private ContactsRepo contactsRepo;
-    private Context context;
+    //private Context context;
 
     public void init(Context context) {
-        this.context = context;
+        //this.context = context;
         if(mContacts != null)
             return;
         contactsRepo = ContactsRepo.getInstance();

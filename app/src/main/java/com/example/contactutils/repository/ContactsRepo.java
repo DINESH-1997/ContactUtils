@@ -12,6 +12,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.contactutils.model.ContactModel;
 import com.example.contactutils.utils.GlobalValues;
 import com.example.contactutils.utils.SharedPreferences;
+import com.example.contactutils.utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -84,7 +85,7 @@ public class ContactsRepo {
         return contactModelList;
     }
 
-    public List<ContactModel> saveOrDeleteContactToSharedPref(Context context, ContactModel contact) {
+    public List<ContactModel> saveOrDeleteContactToSharedPref1(Context context, ContactModel contact) {
         Gson gson = new Gson();
         List<ContactModel> savedContacts = getSavedContacts(context);
         if(savedContacts == null){
@@ -105,6 +106,24 @@ public class ContactsRepo {
         return getContacts(context);
     }
 
+    public List<ContactModel> saveOrDeleteContactToSharedPref(Context context, ContactModel contact) {
+        Gson gson = new Gson();
+        String json;
+        List<ContactModel> savedContacts = getSavedContacts(context);
+
+        if(savedContacts == null)
+            savedContacts = new ArrayList<>();
+
+        if(contact.isSelected()){ //remove contact
+            json = gson.toJson(removeContact(savedContacts, contact.getMobile_number()));
+        } else { //Add contact
+            savedContacts.add(contact);
+            json = gson.toJson(savedContacts);
+        }
+        SharedPreferences.getInstance(context).writeToSharedPreference(GlobalValues.CONTACTS, json);
+        return getContacts(context);
+    }
+
     private List<ContactModel> getSavedContacts(Context context) {
         Gson gson = new Gson();
         return gson.fromJson(SharedPreferences.getInstance(context).readFromSharedPreference(GlobalValues.CONTACTS), new TypeToken<List<ContactModel>>(){}.getType());
@@ -122,6 +141,17 @@ public class ContactsRepo {
         return false;
     }
 
+    private List<ContactModel> removeContact(List<ContactModel> contacts, String number) {
+        for (int i = 0; i < contacts.size(); i++) {
+            if(contacts.get(i).getMobile_number().equalsIgnoreCase(number)){
+                contacts.remove(i);
+                //updatedSavedContacts = contacts;
+                return contacts;
+            }
+        }
+        return contacts;
+    }
+
     private boolean isAlreadyPresentInSavedContacts(List<ContactModel> contacts, String number) {
         if(contacts != null) {
             for (int i = 0; i < contacts.size(); i++) {
@@ -131,5 +161,31 @@ public class ContactsRepo {
             }
         }
         return false;
+    }
+
+    public boolean isValidDialer(Context context, String number) {
+        List<ContactModel> savedContacts = getSavedContacts(context);
+        if(savedContacts != null && savedContacts.size() > 0) {
+            for (int i = 0; i < savedContacts.size(); i++) {
+                if (Utils.formatNumber(savedContacts.get(i).getMobile_number()).equalsIgnoreCase(number)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public MutableLiveData<ContactModel> getDialerInfo(Context context, String number){
+        MutableLiveData<ContactModel> dialer = new MutableLiveData<>();
+        List<ContactModel> savedContacts = getSavedContacts(context);
+        if(savedContacts != null && savedContacts.size() > 0) {
+            for (int i = 0; i < savedContacts.size(); i++) {
+                if (Utils.formatNumber(savedContacts.get(i).getMobile_number()).equalsIgnoreCase(number)) {
+                    dialer.setValue(savedContacts.get(i));
+                    return dialer;
+                }
+            }
+        }
+        return null;
     }
 }

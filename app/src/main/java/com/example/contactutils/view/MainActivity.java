@@ -48,10 +48,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initialize(){
+        activityMainBinding.contactRecycler.setLayoutManager(new LinearLayoutManager(this));
         contactViewModel = ViewModelProviders.of(this).get(ContactViewModel.class);
         contactViewModel.init(this);
         contactViewModel.getContacts().observe(this, contactModels -> {
-            activityMainBinding.contactRecycler.setLayoutManager(new LinearLayoutManager(this));
             activityMainBinding.contactRecycler.setAdapter(new ContactAdapter(contactModels, position -> {
                 System.out.println("selected : " + contactModels.get(position).getName());
                 contactViewModel.UpdateDataContact(this, contactModels.get(position));
@@ -60,8 +60,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkOrAskPermission() {
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS}, CONTACT_REQUEST_CODE);
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) +
+                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS, Manifest.permission.READ_PHONE_STATE}, CONTACT_REQUEST_CODE);
         }else{
             initialize();
         }
@@ -70,9 +72,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == CONTACT_REQUEST_CODE && (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)){
+        if(requestCode == CONTACT_REQUEST_CODE && grantResults.length > 0){
             Log.i("TAG", "permission granted");
-            initialize();
+            if(grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED)
+                initialize();
+            else
+                checkOrAskPermission();
         }else{
             checkOrAskPermission();
         }
